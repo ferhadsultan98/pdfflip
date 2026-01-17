@@ -3,324 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prime Trade Group - Digital Brochure</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
-
+    <title>Azərbaycan TV - Pro Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0/dist/hls.min.js"></script>
     <style>
+        /* --- PROFESSIONAL DİZAYN (CSS) --- */
+        :root {
+            --primary-color: #e50914; /* Netflix Qırmızısı */
+            --bg-color: #141414;
+            --sidebar-bg: #1f1f1f;
+            --text-color: #ffffff;
+            --hover-color: #333;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
-            font-family: Arial, sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             height: 100vh;
             display: flex;
-            flex-direction: column;
             overflow: hidden;
         }
 
-        #loader {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            z-index: 10;
+        /* Sol Tərəf - Kanal Siyahısı */
+        .sidebar {
+            width: 300px;
+            background-color: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            transition: transform 0.3s ease;
+            z-index: 100;
         }
 
-        /* Drag & Drop üçün kursor ayarları */
-        .book-container {
-            flex-grow: 1;
+        .header {
+            padding: 20px;
+            background-color: #000;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-color);
+        }
+
+        /* Axtarış Qutusu */
+        .search-box {
+            padding: 10px;
+            background: #2b2b2b;
+        }
+
+        .search-box input {
+            width: 93%;
+            padding: 10px;
+            border-radius: 4px;
+            border: none;
+            background: #404040;
+            color: white;
+            outline: none;
+        }
+
+        /* Kanal Listi */
+        .channel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        /* Scrollbar Dizaynı */
+        .channel-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .channel-list::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .channel-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .channel-item:hover {
+            background-color: var(--hover-color);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .channel-item.active {
+            background-color: #333;
+            color: var(--primary-color);
+            font-weight: bold;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* Sağ Tərəf - Video Player */
+        .main-content {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+            background-color: #000;
+            position: relative;
+        }
+
+        video {
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            cursor: grab; /* Tutmaq işarəsi */
-            /* Transform keçidini ləğv etdim ki, drag edəndə gecikməsin */
-        }
-        
-        .book-container:active {
-            cursor: grabbing; /* Tutanda yumruq işarəsi */
+            max-height: 100vh;
+            outline: none;
         }
 
-        .flip-book {
-            display: none;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-        }
-
-        .page {
-            padding: 0;
-            background-color: white;
-            overflow: hidden;
-        }
-
-        /* --- TOOLBAR GİZLƏNMƏSİ --- */
-        /* Bu div aşağıda gizli durur, mouse bura gələndə toolbar açılır */
-        .toolbar-trigger {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100px; /* Aşağı 100px sahə */
-            z-index: 99;
-        }
-
-        .toolbar {
-            height: 60px;
-            background-color: rgba(0, 0, 0, 0.85);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            z-index: 100;
-            backdrop-filter: blur(5px);
-            border-top: 1px solid #333;
-            
-            /* Animasiya */
-            transform: translateY(100%); /* Başlanğıcda gizli */
-            transition: transform 0.3s ease-in-out;
-        }
-
-        .toolbar.visible {
-            transform: translateY(0); /* Görünən hal */
-        }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            color: #ccc;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 10px;
+        /* Yüklənmə İkonu (Spinner) */
+        .loader {
+            position: absolute;
+            border: 5px solid #333;
+            border-top: 5px solid var(--primary-color);
             border-radius: 50%;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            display: none; /* Gizli */
         }
 
-        .btn-icon:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Status Mesajı */
+        .status-msg {
+            position: absolute;
+            bottom: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            color: #ccc;
+            font-size: 12px;
         }
 
-        .page-info {
-            color: white;
-            font-size: 14px;
-            min-width: 60px;
-            text-align: center;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
+        /* Mobil Görünüş */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 40%; order: 2; }
+            .main-content { height: 60%; order: 1; }
         }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <i class="fas fa-spinner fa-spin"></i> Kataloq Yüklənir...
-    </div>
-
-    <div class="book-container" id="bookZoomWrapper">
-        <div id="book" class="flip-book"></div>
-    </div>
-
-    <div class="toolbar-trigger" id="triggerArea"></div>
-
-    <div class="toolbar" id="mainToolbar">
-        <button class="btn-icon" onclick="modifyZoom(-0.1)" title="Kiçilt">
-            <i class="fas fa-search-minus"></i>
-        </button>
-
-        <button class="btn-icon" id="prevBtn" title="Əvvəlki">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-
-        <div class="page-info">
-            <span id="currentPage">1</span> / <span id="totalPages">--</span>
+    <div class="sidebar">
+        <div class="header">
+            <h1>AZ TV Player</h1>
         </div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Kanal axtar...">
+        </div>
+        <ul class="channel-list" id="channelList">
+            </ul>
+    </div>
 
-        <button class="btn-icon" id="nextBtn" title="Növbəti">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-
-        <button class="btn-icon" onclick="modifyZoom(0.1)" title="Böyüt">
-            <i class="fas fa-search-plus"></i>
-        </button>
-
-        <a href="primetradegroup.pdf" download class="btn-icon" title="Yüklə">
-            <i class="fas fa-download"></i>
-        </a>
-
-        <button class="btn-icon" onclick="toggleFullScreen()" title="Tam Ekran">
-            <i class="fas fa-expand"></i>
-        </button>
+    <div class="main-content">
+        <div class="loader" id="loader"></div>
+        <div class="status-msg" id="statusMsg"></div>
+        <video id="video" controls autoplay playsinline></video>
     </div>
 
     <script>
-        // --- AYARLAR ---
-        const pdfPath = 'primetradegroup.pdf'; // PDF ADINI DƏQİQ YAZ
-        
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        // --- 1. SƏNİN VERDİYİN KANALLARIN SİYAHISI ---
+        const channels = [
+            { name: "İctimai TV (HD)", url: "https://live.itv.az/itv.m3u8" },
+            { name: "ARB TV", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/main/myvideo-az/arb.m3u8" },
+            { name: "ARB 24", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/main/myvideo-az/arb-24.m3u8" },
+            { name: "ARB Günəş", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/main/myvideo-az/arb-gunes.m3u8" },
+            { name: "Xəzər TV", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/main/myvideo-az/xezer-tv.m3u8" },
+            { name: "Space TV", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/main/myvideo-az/space-tv.m3u8" },
+            { name: "Baku TV", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/refs/heads/main/myvideo-az/baku-tv.m3u8" },
+            { name: "Mədəniyyət TV", url: "https://str.yodacdn.net/medeniyyet/index.m3u8" },
+            { name: "Azad TV", url: "https://stream.atv.az/WebRTCAppEE/streams/780339739845112514894920_adaptive.m3u8" },
+            { name: "CBC Sport", url: "https://mn-nl.mncdn.com/cbcsports_live/cbcsports/playlist.m3u8" },
+            { name: "Kanal S", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/refs/heads/main/myvideo-az/kanal-s.m3u8" },
+            { name: "MTV Azərbaycan", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/refs/heads/main/myvideo-az/mtv-azerbaycan.m3u8" },
+            { name: "TMB TV", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/refs/heads/main/myvideo-az/tmb-azerbaycan.m3u8" },
+            { name: "Dünya TV", url: "https://raw.githubusercontent.com/UzunMuhalefet/streams/refs/heads/main/myvideo-az/dunya-tv.m3u8" },
+            { name: "APA TV", url: "http://rtmp.apa.tv/@pagroup!23.m3u8" }, // HTTP!
+            { name: "AzTV", url: "http://live.aztv.az/hls/aztv.m3u8" }, // HTTP!
+            { name: "Kəpəz TV", url: "http://85.132.78.122:8050/hls/stream/index.m3u8" }, // HTTP!
+            { name: "Alvin Channel", url: "https://cdn10-alvinchannel.yayin.com.tr/alvinchannel/alvinchannel/playlist.m3u8" },
+            { name: "AnewZ", url: "https://53be5ef2d13aa.streamlock.net/cubesanewz-secure/smil:cubesanewz-secure-web.smil/playlist.m3u8" }
+        ];
 
-        let pageFlip;
-        
-        // Dəyişiklik 1: Zoom-u azca azaltdım (0.85)
-        let currentZoom = 0.85; 
-        
-        // Drag dəyişənləri
-        let isDragging = false;
-        let startX, startY, translateX = 0, translateY = 0;
+        const video = document.getElementById('video');
+        const listContainer = document.getElementById('channelList');
+        const loader = document.getElementById('loader');
+        const statusMsg = document.getElementById('statusMsg');
+        const searchInput = document.getElementById('searchInput');
+        let hls = null;
 
-        async function loadBook() {
-            try {
-                const loadingTask = pdfjsLib.getDocument(pdfPath);
-                const pdf = await loadingTask.promise;
-                
-                document.getElementById('totalPages').innerText = pdf.numPages;
-
-                const bookContainer = document.getElementById('book');
-
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const pageDiv = document.createElement('div');
-                    pageDiv.className = 'page';
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    pageDiv.appendChild(canvas);
-                    bookContainer.appendChild(pageDiv);
-
-                    // Keyfiyyət (Scale 2 = Retina)
-                    const viewport = page.getViewport({ scale: 2 });
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    }).promise;
+        // --- 2. KANALLARI SİYAHIYA DÜZMƏK ---
+        function renderChannels(filter = "") {
+            listContainer.innerHTML = "";
+            channels.forEach((channel, index) => {
+                if (channel.name.toLowerCase().includes(filter.toLowerCase())) {
+                    let li = document.createElement('li');
+                    li.className = 'channel-item';
+                    li.innerText = `📺 ${channel.name}`;
+                    li.onclick = () => loadChannel(channel.url, li);
+                    listContainer.appendChild(li);
                 }
+            });
+        }
 
-                pageFlip = new St.PageFlip(document.getElementById('book'), {
-                    width: 450,
-                    height: 636,
-                    size: 'stretch',
-                    showCover: true,
-                    minWidth: 300,
-                    maxWidth: 1000,
-                    minHeight: 400,
-                    maxHeight: 1200,
-                    maxShadowOpacity: 0.5,
-                    autoSize: true,
-                    mobileScrollSupport: true
-                });
+        // --- 3. VİDEO YÜKLƏMƏ (PROFESSIONAL MƏNTİQ) ---
+        function loadChannel(url, element) {
+            // Aktiv dizaynı dəyiş
+            document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
 
-                pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+            loader.style.display = 'block'; // Yüklənir işarəsini göstər
+            statusMsg.style.display = 'none';
 
-                pageFlip.on('flip', (e) => {
-                    document.getElementById('currentPage').innerText = e.data + 1;
-                });
-
-                document.getElementById('prevBtn').onclick = () => pageFlip.flipPrev();
-                document.getElementById('nextBtn').onclick = () => pageFlip.flipNext();
-
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('book').style.display = 'block';
-
-                // Yüklənən kimi ilkin pozisiyanı tətbiq et
-                updateTransform();
-
-            } catch (error) {
-                console.error(error);
-                document.getElementById('loader').innerHTML = "Xəta: PDF tapılmadı.";
+            // HTTP Link Xəbərdarlığı (HTTPS saytda HTTP link açılmaya bilər)
+            if (window.location.protocol === 'https:' && url.startsWith('http:')) {
+                showStatus("⚠️ Diqqət: Bu kanal şifrəsiz (HTTP) yayımdır. Brauzer bloklaya bilər.");
             }
-        }
 
-        // --- DRAG & DROP VE ZOOM SISTEMI (BİRLƏŞDİRİLMİŞ) ---
-        const wrapper = document.getElementById('bookZoomWrapper');
+            if (Hls.isSupported()) {
+                if (hls) {
+                    hls.destroy();
+                }
+                // HLS Parametrləri (Donmanı azaltmaq üçün)
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
 
-        function updateTransform() {
-            // Həm zoom-u, həm də sürüşdürməni (translate) eyni anda tətbiq edirik
-            wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
-        }
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    loader.style.display = 'none';
+                    video.play().catch(e => console.log("Avtomatik oynatmaq üçün ekrana toxunun."));
+                });
 
-        function modifyZoom(factor) {
-            let newZoom = currentZoom + factor;
-            if (newZoom < 0.5) newZoom = 0.5;
-            if (newZoom > 3) newZoom = 3;
-            currentZoom = newZoom;
-            updateTransform();
-        }
-
-        // Mouse basılanda (Drag start)
-        wrapper.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-            wrapper.style.cursor = 'grabbing';
-        });
-
-        // Mouse buraxılanda (Drag stop)
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-            wrapper.style.cursor = 'grab';
-        });
-
-        // Mouse hərəkət edəndə (Dragging)
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            updateTransform();
-        });
-
-        // --- TOOLBAR HOVER LOGIKASI ---
-        const toolbar = document.getElementById('mainToolbar');
-        const triggerArea = document.getElementById('triggerArea');
-        let hideTimeout;
-
-        function showToolbar() {
-            toolbar.classList.add('visible');
-            
-            // Əvvəlki sayğacı ləğv et
-            if (hideTimeout) clearTimeout(hideTimeout);
-
-            // Dəyişiklik 2: 5 saniyə sonra bağla
-            hideTimeout = setTimeout(() => {
-                toolbar.classList.remove('visible');
-            }, 5000);
-        }
-
-        // Mouse aşağı hissəyə gələndə və ya toolbarın özündə olanda
-        triggerArea.addEventListener('mousemove', showToolbar);
-        toolbar.addEventListener('mousemove', showToolbar);
-        
-        // Tam Ekran
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        loader.style.display = 'none';
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showStatus("⚠️ Şəbəkə xətası. Kanalın serveri cavab vermir.");
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                showStatus("⚠️ Format xətası. Yayım bərpa edilir...");
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showStatus("❌ Bu kanal hal-hazırda işləmir.");
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+            }
+            // Safari (iPhone/iPad) üçün
+            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', function() {
+                    loader.style.display = 'none';
+                    video.play();
+                });
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                showStatus("❌ Brauzeriniz bu formatı dəstəkləmir.");
             }
         }
 
-        loadBook();
+        function showStatus(msg) {
+            statusMsg.innerText = msg;
+            statusMsg.style.display = 'block';
+        }
+
+        // Axtarış funksiyası
+        searchInput.addEventListener('input', (e) => {
+            renderChannels(e.target.value);
+        });
+
+        // Başlanğıcda kanalları yüklə
+        renderChannels();
+        // İlk kanalı avtomatik açmasın (sakit qalsın), istifadəçi seçsin.
     </script>
+
 </body>
 </html>
