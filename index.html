@@ -14,271 +14,243 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #1e1e1e; /* Tünd boz fon */
+            background-color: #1a1a1a; /* Tünd boz arxa fon */
             font-family: Arial, sans-serif;
             height: 100vh;
-            width: 100vw;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
             overflow: hidden;
         }
 
-        /* --- LOADER --- */
+        /* Yüklənmə Yazısı */
         #loader {
             position: absolute;
-            z-index: 20;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-size: 24px;
+            z-index: 10;
         }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- KITAB SAHƏSİ --- */
-        /* Zoom bu konteynerə tətbiq olunacaq */
-        .book-wrapper {
-            transition: transform 0.2s ease-out; /* Zoom hamar olsun */
+        /* Kitabın əsas konteyneri */
+        .book-container {
+            flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            transition: transform 0.3s ease; /* Zoom effekti üçün */
         }
 
+        /* Kitabın özü */
         .flip-book {
             display: none; /* Yüklənənə qədər gizli */
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
 
         .page {
+            padding: 0;
             background-color: white;
-        }
-        
-        /* Canvas keyfiyyəti üçün */
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
+            overflow: hidden;
         }
 
-        /* --- GİZLƏNƏN TOOLBAR --- */
-        .toolbar-trigger {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            z-index: 99;
-        }
-
+        /* Toolbar (Aşağıdakı panel) */
         .toolbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
             height: 60px;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.85);
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 20px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
             z-index: 100;
-            transform: translateY(100%);
-            transition: transform 0.3s ease-in-out;
+            backdrop-filter: blur(5px);
             border-top: 1px solid #333;
-        }
-
-        .toolbar.visible {
-            transform: translateY(0);
         }
 
         .btn-icon {
             background: none;
             border: none;
-            color: #ddd;
+            color: #ccc;
             font-size: 18px;
             cursor: pointer;
-            width: 40px;
-            height: 40px;
+            padding: 10px;
             border-radius: 50%;
             transition: 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 40px;
+            height: 40px;
         }
 
         .btn-icon:hover {
             color: white;
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         .page-info {
             color: white;
             font-size: 14px;
-            min-width: 80px;
+            min-width: 60px;
             text-align: center;
+        }
+
+        /* Canvas-ın düzgün oturması üçün */
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
         }
     </style>
 </head>
 <body>
 
     <div id="loader">
-        <div class="spinner"></div>
-        <span>Kataloq hazırlanır...</span>
+        <i class="fas fa-spinner fa-spin"></i> Kataloq Yüklənir...
     </div>
 
-    <div class="book-wrapper" id="zoomArea">
+    <div class="book-container" id="bookZoomWrapper">
         <div id="book" class="flip-book"></div>
     </div>
 
-    <div class="toolbar-trigger" id="triggerArea"></div>
-    <div class="toolbar" id="mainToolbar">
-        <button class="btn-icon" onclick="zoomBook(-0.1)" title="Kiçilt"><i class="fas fa-search-minus"></i></button>
-        <button class="btn-icon" id="prevBtn" title="Geri"><i class="fas fa-chevron-left"></i></button>
-        
-        <div class="page-info"><span id="currentPage">1</span> / <span id="totalPages">--</span></div>
-        
-        <button class="btn-icon" id="nextBtn" title="İrəli"><i class="fas fa-chevron-right"></i></button>
-        <button class="btn-icon" onclick="zoomBook(0.1)" title="Böyüt"><i class="fas fa-search-plus"></i></button>
-        
-        <a href="kataloq.pdf" download class="btn-icon" title="Yüklə"><i class="fas fa-download"></i></a>
-        
-        <button class="btn-icon" onclick="toggleFullScreen()" title="Tam Ekran"><i class="fas fa-expand"></i></button>
+    <div class="toolbar">
+        <button class="btn-icon" onclick="zoomBook(0.9)" title="Kiçilt">
+            <i class="fas fa-search-minus"></i>
+        </button>
+
+        <button class="btn-icon" id="prevBtn" title="Əvvəlki">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <div class="page-info">
+            <span id="currentPage">1</span> / <span id="totalPages">--</span>
+        </div>
+
+        <button class="btn-icon" id="nextBtn" title="Növbəti">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <button class="btn-icon" onclick="zoomBook(1.1)" title="Böyüt">
+            <i class="fas fa-search-plus"></i>
+        </button>
+
+        <a href="kataloq.pdf" download class="btn-icon" title="Yüklə">
+            <i class="fas fa-download"></i>
+        </a>
+
+        <button class="btn-icon" onclick="toggleFullScreen()" title="Tam Ekran">
+            <i class="fas fa-expand"></i>
+        </button>
     </div>
 
     <script>
         // --- AYARLAR ---
-        const pdfPath = 'primetradegroup.pdf'; // PDF ADINI BURA YAZ
-        const initialScale = 0.9; // Başlanğıc ölçü (Ekrana sığması üçün)
-
-        // --- DƏYİŞƏNLƏR ---
+        const pdfPath = 'primetradegroup.pdf'; // FAYL ADINI DƏQİQ YAZ
+        
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        
-        let pageFlip;
-        let currentScale = initialScale;
 
-        // --- PDF YÜKLƏNMƏSİ ---
+        let pageFlip;
+        let currentZoom = 1;
+
         async function loadBook() {
             try {
                 const loadingTask = pdfjsLib.getDocument(pdfPath);
                 const pdf = await loadingTask.promise;
-                document.getElementById('totalPages').innerText = pdf.numPages;
                 
+                document.getElementById('totalPages').innerText = pdf.numPages;
+
                 const bookContainer = document.getElementById('book');
 
-                // Səhifələrin yaradılması
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
                     
                     const pageDiv = document.createElement('div');
-                    pageDiv.className = 'page';
+                    pageDiv.className = 'page'; // Bura 'hard' class-ı əlavə etsək səhifə bərk olar
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     pageDiv.appendChild(canvas);
                     bookContainer.appendChild(pageDiv);
 
-                    // KEYFİYYƏT: Scale 2.0 (Yüksək keyfiyyət)
+                    // Keyfiyyətli görüntü üçün viewport (Scale 2 = Retina keyfiyyəti)
                     const viewport = page.getViewport({ scale: 2 });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
 
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
                 }
 
-                // FlipBook işə salınır
+                // --- FLIPBOOK YARADILMASI ---
+                // Sənin istədiyin o "İlk səhifə problemi" burda həll olunur: showCover: true
                 pageFlip = new St.PageFlip(document.getElementById('book'), {
-                    width: 450, // Bir səhifənin eni
-                    height: 636, // Hündürlüyü
+                    width: 450, // Bir səhifənin eni (Açılanda 900 olacaq)
+                    height: 636, // Hündürlük (A4 nisbəti təxminən)
+                    
                     size: 'stretch',
-                    showCover: true, // Üz qabığı rejimi (Birinci səhifə tək)
+                    
+                    // BU ƏN VACİB HİSSƏDİR:
+                    showCover: true, // Birinci səhifəni üz qabığı kimi göstərir (tək səhifə)
+                    
                     minWidth: 300,
                     maxWidth: 1000,
                     minHeight: 400,
                     maxHeight: 1200,
                     maxShadowOpacity: 0.5,
-                    autoSize: true,
-                    mobileScrollSupport: false // Zoom konfliktini önləmək üçün
+                    autoSize: true, // Avtomatik mərkəzləmə üçün
+                    mobileScrollSupport: true
                 });
 
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
-                // Səhifə nömrəsi dəyişimi
+                // Səhifə çevriləndə nömrəni dəyiş
                 pageFlip.on('flip', (e) => {
                     document.getElementById('currentPage').innerText = e.data + 1;
                 });
 
-                // Düymə funksiyaları
+                // Düymələri aktivləşdir
                 document.getElementById('prevBtn').onclick = () => pageFlip.flipPrev();
                 document.getElementById('nextBtn').onclick = () => pageFlip.flipNext();
 
-                // Hazırdır
+                // Yüklənmə bitdi
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('book').style.display = 'block';
-                
-                updateZoom();
 
             } catch (error) {
                 console.error(error);
-                document.getElementById('loader').innerHTML = "<p>Xəta: PDF tapılmadı.</p>";
+                document.getElementById('loader').innerHTML = "Xəta: PDF tapılmadı. Fayl adını yoxlayın.";
             }
         }
 
-        // --- ZOOM FUNKSİYASI (Clean CSS Transform) ---
-        function updateZoom() {
-            // Kitabı yox, onun wrapperini böyüdürük ki, flip pozulmasın
-            document.getElementById('zoomArea').style.transform = `scale(${currentScale})`;
+        // --- ZOOM FUNKSİYASI ---
+        function zoomBook(factor) {
+            const wrapper = document.getElementById('bookZoomWrapper');
+            if (factor > 1 && currentZoom < 2) currentZoom += 0.2;
+            if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
+            
+            // CSS Transform ilə zoom edirik (ən təmiz yol)
+            wrapper.style.transform = `scale(${currentZoom})`;
         }
 
-        function zoomBook(change) {
-            let newScale = currentScale + change;
-            // Limitlər (Çox kiçik və ya nəhəng olmasın)
-            if (newScale < 0.5) newScale = 0.5;
-            if (newScale > 2.0) newScale = 2.0;
-            currentScale = newScale;
-            updateZoom();
-        }
-
-        // --- TAM EKRAN ---
+        // --- TAM EKRAN (FULLSCREEN) ---
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error: ${err.message}`);
-                });
+                document.documentElement.requestFullscreen();
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
             }
         }
 
-        // --- TOOLBAR GİZLƏNMƏSİ ---
-        const toolbar = document.getElementById('mainToolbar');
-        const triggerArea = document.getElementById('triggerArea');
-        let toolbarTimeout;
-
-        function showToolbar() {
-            toolbar.classList.add('visible');
-            if (toolbarTimeout) clearTimeout(toolbarTimeout);
-            toolbarTimeout = setTimeout(() => {
-                toolbar.classList.remove('visible');
-            }, 3000); // 3 saniyə sonra gizlənir
-        }
-
-        // Həm aşağı hissəyə, həm də toolbarın özünə gələndə aktivləşsin
-        triggerArea.addEventListener('mousemove', showToolbar);
-        toolbar.addEventListener('mousemove', showToolbar);
-        window.addEventListener('touchstart', showToolbar); // Mobil üçün
-
-        // Başla
         loadBook();
     </script>
 </body>
