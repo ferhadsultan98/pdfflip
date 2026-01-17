@@ -14,7 +14,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a; /* Tünd boz arxa fon */
+            background-color: #1a1a1a;
             font-family: Arial, sans-serif;
             height: 100vh;
             display: flex;
@@ -22,7 +22,6 @@
             overflow: hidden;
         }
 
-        /* Yüklənmə Yazısı */
         #loader {
             position: absolute;
             top: 50%;
@@ -33,7 +32,7 @@
             z-index: 10;
         }
 
-        /* Kitabın əsas konteyneri */
+        /* Drag & Drop üçün kursor ayarları */
         .book-container {
             flex-grow: 1;
             display: flex;
@@ -42,12 +41,16 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            transition: transform 0.3s ease; /* Zoom effekti üçün */
+            cursor: grab; /* Tutmaq işarəsi */
+            /* Transform keçidini ləğv etdim ki, drag edəndə gecikməsin */
+        }
+        
+        .book-container:active {
+            cursor: grabbing; /* Tutanda yumruq işarəsi */
         }
 
-        /* Kitabın özü */
         .flip-book {
-            display: none; /* Yüklənənə qədər gizli */
+            display: none;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
 
@@ -57,7 +60,17 @@
             overflow: hidden;
         }
 
-        /* Toolbar (Aşağıdakı panel) */
+        /* --- TOOLBAR GİZLƏNMƏSİ --- */
+        /* Bu div aşağıda gizli durur, mouse bura gələndə toolbar açılır */
+        .toolbar-trigger {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px; /* Aşağı 100px sahə */
+            z-index: 99;
+        }
+
         .toolbar {
             height: 60px;
             background-color: rgba(0, 0, 0, 0.85);
@@ -71,6 +84,14 @@
             z-index: 100;
             backdrop-filter: blur(5px);
             border-top: 1px solid #333;
+            
+            /* Animasiya */
+            transform: translateY(100%); /* Başlanğıcda gizli */
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .toolbar.visible {
+            transform: translateY(0); /* Görünən hal */
         }
 
         .btn-icon {
@@ -101,7 +122,6 @@
             text-align: center;
         }
 
-        /* Canvas-ın düzgün oturması üçün */
         canvas {
             width: 100% !important;
             height: 100% !important;
@@ -118,8 +138,10 @@
         <div id="book" class="flip-book"></div>
     </div>
 
-    <div class="toolbar">
-        <button class="btn-icon" onclick="zoomBook(0.9)" title="Kiçilt">
+    <div class="toolbar-trigger" id="triggerArea"></div>
+
+    <div class="toolbar" id="mainToolbar">
+        <button class="btn-icon" onclick="modifyZoom(-0.1)" title="Kiçilt">
             <i class="fas fa-search-minus"></i>
         </button>
 
@@ -135,11 +157,11 @@
             <i class="fas fa-chevron-right"></i>
         </button>
 
-        <button class="btn-icon" onclick="zoomBook(1.1)" title="Böyüt">
+        <button class="btn-icon" onclick="modifyZoom(0.1)" title="Böyüt">
             <i class="fas fa-search-plus"></i>
         </button>
 
-        <a href="kataloq.pdf" download class="btn-icon" title="Yüklə">
+        <a href="primetradegroup.pdf" download class="btn-icon" title="Yüklə">
             <i class="fas fa-download"></i>
         </a>
 
@@ -150,13 +172,19 @@
 
     <script>
         // --- AYARLAR ---
-        const pdfPath = 'primetradegroup.pdf'; // FAYL ADINI DƏQİQ YAZ
+        const pdfPath = 'primetradegroup.pdf'; // PDF ADINI DƏQİQ YAZ
         
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pageFlip;
-        let currentZoom = 1;
+        
+        // Dəyişiklik 1: Zoom-u azca azaltdım (0.85)
+        let currentZoom = 0.85; 
+        
+        // Drag dəyişənləri
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
 
         async function loadBook() {
             try {
@@ -169,16 +197,15 @@
 
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
-                    
                     const pageDiv = document.createElement('div');
-                    pageDiv.className = 'page'; // Bura 'hard' class-ı əlavə etsək səhifə bərk olar
+                    pageDiv.className = 'page';
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     pageDiv.appendChild(canvas);
                     bookContainer.appendChild(pageDiv);
 
-                    // Keyfiyyətli görüntü üçün viewport (Scale 2 = Retina keyfiyyəti)
+                    // Keyfiyyət (Scale 2 = Retina)
                     const viewport = page.getViewport({ scale: 2 });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
@@ -189,65 +216,107 @@
                     }).promise;
                 }
 
-                // --- FLIPBOOK YARADILMASI ---
-                // Sənin istədiyin o "İlk səhifə problemi" burda həll olunur: showCover: true
                 pageFlip = new St.PageFlip(document.getElementById('book'), {
-                    width: 450, // Bir səhifənin eni (Açılanda 900 olacaq)
-                    height: 636, // Hündürlük (A4 nisbəti təxminən)
-                    
+                    width: 450,
+                    height: 636,
                     size: 'stretch',
-                    
-                    // BU ƏN VACİB HİSSƏDİR:
-                    showCover: true, // Birinci səhifəni üz qabığı kimi göstərir (tək səhifə)
-                    
+                    showCover: true,
                     minWidth: 300,
                     maxWidth: 1000,
                     minHeight: 400,
                     maxHeight: 1200,
                     maxShadowOpacity: 0.5,
-                    autoSize: true, // Avtomatik mərkəzləmə üçün
+                    autoSize: true,
                     mobileScrollSupport: true
                 });
 
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
-                // Səhifə çevriləndə nömrəni dəyiş
                 pageFlip.on('flip', (e) => {
                     document.getElementById('currentPage').innerText = e.data + 1;
                 });
 
-                // Düymələri aktivləşdir
                 document.getElementById('prevBtn').onclick = () => pageFlip.flipPrev();
                 document.getElementById('nextBtn').onclick = () => pageFlip.flipNext();
 
-                // Yüklənmə bitdi
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('book').style.display = 'block';
 
+                // Yüklənən kimi ilkin pozisiyanı tətbiq et
+                updateTransform();
+
             } catch (error) {
                 console.error(error);
-                document.getElementById('loader').innerHTML = "Xəta: PDF tapılmadı. Fayl adını yoxlayın.";
+                document.getElementById('loader').innerHTML = "Xəta: PDF tapılmadı.";
             }
         }
 
-        // --- ZOOM FUNKSİYASI ---
-        function zoomBook(factor) {
-            const wrapper = document.getElementById('bookZoomWrapper');
-            if (factor > 1 && currentZoom < 2) currentZoom += 0.2;
-            if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
-            
-            // CSS Transform ilə zoom edirik (ən təmiz yol)
-            wrapper.style.transform = `scale(${currentZoom})`;
+        // --- DRAG & DROP VE ZOOM SISTEMI (BİRLƏŞDİRİLMİŞ) ---
+        const wrapper = document.getElementById('bookZoomWrapper');
+
+        function updateTransform() {
+            // Həm zoom-u, həm də sürüşdürməni (translate) eyni anda tətbiq edirik
+            wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
         }
 
-        // --- TAM EKRAN (FULLSCREEN) ---
+        function modifyZoom(factor) {
+            let newZoom = currentZoom + factor;
+            if (newZoom < 0.5) newZoom = 0.5;
+            if (newZoom > 3) newZoom = 3;
+            currentZoom = newZoom;
+            updateTransform();
+        }
+
+        // Mouse basılanda (Drag start)
+        wrapper.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            wrapper.style.cursor = 'grabbing';
+        });
+
+        // Mouse buraxılanda (Drag stop)
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            wrapper.style.cursor = 'grab';
+        });
+
+        // Mouse hərəkət edəndə (Dragging)
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        // --- TOOLBAR HOVER LOGIKASI ---
+        const toolbar = document.getElementById('mainToolbar');
+        const triggerArea = document.getElementById('triggerArea');
+        let hideTimeout;
+
+        function showToolbar() {
+            toolbar.classList.add('visible');
+            
+            // Əvvəlki sayğacı ləğv et
+            if (hideTimeout) clearTimeout(hideTimeout);
+
+            // Dəyişiklik 2: 5 saniyə sonra bağla
+            hideTimeout = setTimeout(() => {
+                toolbar.classList.remove('visible');
+            }, 5000);
+        }
+
+        // Mouse aşağı hissəyə gələndə və ya toolbarın özündə olanda
+        triggerArea.addEventListener('mousemove', showToolbar);
+        toolbar.addEventListener('mousemove', showToolbar);
+        
+        // Tam Ekran
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                if (document.exitFullscreen) document.exitFullscreen();
             }
         }
 
