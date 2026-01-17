@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Trade Group - Kataloq</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2b2b2b; /* Arxa fon rəngi */
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Yüklənmə ekranı */
+        #loader {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Kitabın konteyneri */
+        .flip-book {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            display: none; /* Yüklənənə qədər gizlət */
+        }
+
+        /* Hər səhifənin stili */
+        .page {
+            padding: 0;
+            background-color: white;
+            overflow: hidden;
+        }
+
+        /* PDF-in Canvas stili */
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">PDF yüklənir...</div>
+
+    <div id="book" class="flip-book">
+        </div>
+
+    <script>
+        // --- AYARLAR ---
+        const pdfPath = 'primetradegroup.pdf'; // PDF FAYLININ ADINI BURA YAZ (Eyni qovluqda olmalıdır)
+        
+        // Kitabxanaları çağıraq
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        async function loadBook() {
+            try {
+                // 1. PDF-i yükləyirik
+                const loadingTask = pdfjsLib.getDocument(pdfPath);
+                const pdf = await loadingTask.promise;
+                
+                const bookContainer = document.getElementById('book');
+                const loader = document.getElementById('loader');
+
+                // 2. Hər səhifəni şəkilə (canvas-a) çevirib kitaba əlavə edirik
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    
+                    // Səhifə div-i yaradırıq
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page';
+                    
+                    // Canvas yaradırıq (PDF-i çəkmək üçün)
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    pageDiv.appendChild(canvas);
+                    bookContainer.appendChild(pageDiv);
+
+                    // PDF ölçülərini hesablayırıq
+                    const viewport = page.getViewport({ scale: 1.5 }); // Keyfiyyət üçün scale artır
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    // PDF-i canvasa çəkirik
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+                }
+
+                // 3. FlipBook (Çevirmə) effektini işə salırıq
+                const pageFlip = new St.PageFlip(document.getElementById('book'), {
+                    width: 400,  // Kitabın bir səhifəsinin eni
+                    height: 570, // Kitabın hündürlüyü
+                    size: 'stretch',
+                    minWidth: 300,
+                    maxWidth: 1000,
+                    minHeight: 400,
+                    maxHeight: 1000,
+                    showCover: true,
+                    maxShadowOpacity: 0.5 // Kölgə effekti
+                });
+
+                // Hazır səhifələri kitaba yüklə
+                pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+
+                // Yüklənmə bitdi, kitabı göstər
+                loader.style.display = 'none';
+                bookContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error("Xəta baş verdi:", error);
+                document.getElementById('loader').innerText = "Xəta: PDF tapılmadı və ya serverdə CORS problemi var.";
+            }
+        }
+
+        // Başla
+        loadBook();
+    </script>
+</body>
+</html>
