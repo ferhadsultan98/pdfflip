@@ -2,7 +2,7 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Prime Trade Group - Digital Brochure</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,12 +14,29 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a; /* Tünd boz arxa fon */
+            /* Arxa fon şəkli (Blur effektinin görünməsi üçün) */
+            background: url('https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?q=80&w=2676&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
             font-family: Arial, sans-serif;
             height: 100vh;
+            width: 100vw;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* Şüşə Effekti (Glassmorphism Overlay) */
+        .glass-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 20, 20, 0.7); /* Tünd lay */
+            backdrop-filter: blur(15px); /* Güclü bulanıqlıq */
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 1;
         }
 
         /* Yüklənmə Yazısı */
@@ -30,25 +47,38 @@
             transform: translate(-50%, -50%);
             color: white;
             font-size: 24px;
-            z-index: 10;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Kitabın əsas konteyneri */
-        .book-container {
-            flex-grow: 1;
+        /* Zoom və Sürüşdürmə Sahəsi */
+        .zoom-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            width:  100%;
-            height: 100%;
             overflow: hidden;
-            transition: transform 0.3s ease; /* Zoom effekti üçün */
+            cursor: default; /* Zoom olanda grab olacaq */
+        }
+
+        .book-transform-layer {
+            transition: transform 0.1s linear; /* Sürüşdürmənin hamar olması üçün */
+            transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         /* Kitabın özü */
         .flip-book {
-            display: none; /* Yüklənənə qədər gizli */
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            display: none;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
         .page {
@@ -57,69 +87,94 @@
             overflow: hidden;
         }
 
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
         /* Toolbar (Aşağıdakı panel) */
         .toolbar {
-            height: 60px;
-            background-color: rgba(0, 0, 0, 0.85);
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 50px;
+            background: rgba(50, 50, 50, 0.6); /* Yarı şəffaf */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 0 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+            gap: 15px;
             z-index: 100;
-            backdrop-filter: blur(5px);
-            border-top: 1px solid #333;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            
+            /* Animasiya */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        /* Toolbar görünən zaman */
+        .toolbar.visible {
+            opacity: 1;
+            visibility: visible;
         }
 
         .btn-icon {
             background: none;
             border: none;
-            color: #ccc;
-            font-size: 18px;
+            color: #fff;
+            font-size: 16px;
             cursor: pointer;
-            padding: 10px;
+            padding: 8px;
             border-radius: 50%;
             transition: 0.2s;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
         }
 
         .btn-icon:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
         }
 
         .page-info {
             color: white;
-            font-size: 14px;
-            min-width: 60px;
+            font-size: 13px;
+            min-width: 50px;
             text-align: center;
+            font-weight: bold;
         }
 
-        /* Canvas-ın düzgün oturması üçün */
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
     </style>
 </head>
 <body>
 
+    <!-- Arxa fon bluru üçün lay -->
+    <div class="glass-overlay"></div>
+
     <div id="loader">
-        <i class="fas fa-spinner fa-spin"></i> Kataloq Yüklənir...
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <span>Kataloq Yüklənir...</span>
     </div>
 
-    <div class="book-container" id="bookZoomWrapper">
-        <div id="book" class="flip-book"></div>
+    <!-- Zoom və Drag üçün Wrapper -->
+    <div class="zoom-wrapper" id="zoomWrapper">
+        <div class="book-transform-layer" id="transformLayer">
+            <div id="book" class="flip-book"></div>
+        </div>
     </div>
 
-    <div class="toolbar">
-        <button class="btn-icon" onclick="zoomBook(0.9)" title="Kiçilt">
+    <!-- Toolbar -->
+    <div class="toolbar" id="toolbar">
+        <button class="btn-icon" onclick="changeZoom(-0.2)" title="Kiçilt">
             <i class="fas fa-search-minus"></i>
         </button>
 
@@ -135,11 +190,11 @@
             <i class="fas fa-chevron-right"></i>
         </button>
 
-        <button class="btn-icon" onclick="zoomBook(1.1)" title="Böyüt">
+        <button class="btn-icon" onclick="changeZoom(0.2)" title="Böyüt">
             <i class="fas fa-search-plus"></i>
         </button>
 
-        <a href="kataloq.pdf" download class="btn-icon" title="Yüklə">
+        <a href="primetradegroup.pdf" download class="btn-icon" title="Yüklə">
             <i class="fas fa-download"></i>
         </a>
 
@@ -150,35 +205,42 @@
 
     <script>
         // --- AYARLAR ---
-        const pdfPath = 'primetradegroup.pdf'; // FAYL ADINI DƏQİQ YAZ
-        
+        const pdfPath = 'primetradegroup.pdf'; // PDF faylının adı
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pageFlip;
+        
+        // Zoom və Pan Dəyişənləri
         let currentZoom = 1;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let startX, startY;
 
+        const zoomWrapper = document.getElementById('zoomWrapper');
+        const transformLayer = document.getElementById('transformLayer');
+        const bookElement = document.getElementById('book');
+        const toolbar = document.getElementById('toolbar');
+
+        // --- 1. PDF YÜKLƏNMƏSİ ---
         async function loadBook() {
             try {
                 const loadingTask = pdfjsLib.getDocument(pdfPath);
                 const pdf = await loadingTask.promise;
-                
                 document.getElementById('totalPages').innerText = pdf.numPages;
-
-                const bookContainer = document.getElementById('book');
 
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
-                    
                     const pageDiv = document.createElement('div');
-                    pageDiv.className = 'page'; // Bura 'hard' class-ı əlavə etsək səhifə bərk olar
+                    pageDiv.className = 'page';
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     pageDiv.appendChild(canvas);
-                    bookContainer.appendChild(pageDiv);
+                    bookElement.appendChild(pageDiv);
 
-                    // Keyfiyyətli görüntü üçün viewport (Scale 2 = Retina keyfiyyəti)
+                    // Retina keyfiyyəti üçün scale 2
                     const viewport = page.getViewport({ scale: 2 });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
@@ -189,61 +251,157 @@
                     }).promise;
                 }
 
-                // --- FLIPBOOK YARADILMASI ---
-                // Sənin istədiyin o "İlk səhifə problemi" burda həll olunur: showCover: true
-                pageFlip = new St.PageFlip(document.getElementById('book'), {
-                    width: 450, // Bir səhifənin eni (Açılanda 900 olacaq)
-                    height: 636, // Hündürlük (A4 nisbəti təxminən)
-                    
+                // PageFlip İnitializasiya
+                pageFlip = new St.PageFlip(bookElement, {
+                    width: 450,
+                    height: 636,
                     size: 'stretch',
-                    
-                    // BU ƏN VACİB HİSSƏDİR:
-                    showCover: true, // Birinci səhifəni üz qabığı kimi göstərir (tək səhifə)
-                    
                     minWidth: 300,
                     maxWidth: 1000,
                     minHeight: 400,
                     maxHeight: 1200,
+                    showCover: true,
                     maxShadowOpacity: 0.5,
-                    autoSize: true, // Avtomatik mərkəzləmə üçün
-                    mobileScrollSupport: true
+                    autoSize: true,
+                    // Bu parametr mouse ilə sürüşdürüb çevirməyə icazə verir, 
+                    // amma "click" hadisəsini biz aşağıda idarə edəcəyik
+                    useMouseEvents: true 
                 });
 
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
-                // Səhifə çevriləndə nömrəni dəyiş
+                // Səhifə dəyişəndə
                 pageFlip.on('flip', (e) => {
                     document.getElementById('currentPage').innerText = e.data + 1;
                 });
 
-                // Düymələri aktivləşdir
+                // Düymələr
                 document.getElementById('prevBtn').onclick = () => pageFlip.flipPrev();
                 document.getElementById('nextBtn').onclick = () => pageFlip.flipNext();
 
-                // Yüklənmə bitdi
+                // Hazırdır
                 document.getElementById('loader').style.display = 'none';
-                document.getElementById('book').style.display = 'block';
+                bookElement.style.display = 'block';
 
             } catch (error) {
                 console.error(error);
-                document.getElementById('loader').innerHTML = "Xəta: PDF tapılmadı. Fayl adını yoxlayın.";
+                document.getElementById('loader').innerHTML = "<span style='text-align:center'>Xəta!<br>PDF faylı tapılmadı.</span>";
             }
         }
 
-        // --- ZOOM FUNKSİYASI ---
-        function zoomBook(factor) {
-            const wrapper = document.getElementById('bookZoomWrapper');
-            if (factor > 1 && currentZoom < 2) currentZoom += 0.2;
-            if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
+        // --- 2. TOOLBAR GİZLƏNMƏ MƏNTİQİ (5 Saniyə) ---
+        let toolbarTimeout;
+
+        function showToolbar() {
+            toolbar.classList.add('visible');
             
-            // CSS Transform ilə zoom edirik (ən təmiz yol)
-            wrapper.style.transform = `scale(${currentZoom})`;
+            // Köhnə sayğacı sıfırla
+            clearTimeout(toolbarTimeout);
+            
+            // Yeni sayğac qur: 5 saniyə hərəkətsizlikdən sonra gizlət
+            toolbarTimeout = setTimeout(() => {
+                toolbar.classList.remove('visible');
+            }, 5000);
         }
 
-        // --- TAM EKRAN (FULLSCREEN) ---
+        // Siçan hərəkət edəndə və ya ekrana toxunanda (mobil) toolbarı göstər
+        window.addEventListener('mousemove', showToolbar);
+        window.addEventListener('touchstart', showToolbar);
+        window.addEventListener('click', showToolbar);
+
+
+        // --- 3. ZOOM VƏ DRAG/DROP MƏNTİQİ ---
+        
+        function updateTransform() {
+            // Transformu tətbiq et
+            transformLayer.style.transform = `scale(${currentZoom}) translate(${panX}px, ${panY}px)`;
+            
+            // Zoom > 1 olduqda kitabın daxili "flip" hadisələrini bloklayırıq ki, rahat drag edək
+            if (currentZoom > 1) {
+                bookElement.style.pointerEvents = 'none'; // Kitabı deaktiv et, wrapperi aktiv et
+                zoomWrapper.style.cursor = 'grab';
+            } else {
+                bookElement.style.pointerEvents = 'auto'; // Kitabı aktiv et
+                zoomWrapper.style.cursor = 'default';
+                // Zoom 1 olanda mərkəzə qaytar
+                panX = 0;
+                panY = 0;
+                transformLayer.style.transform = `scale(1) translate(0px, 0px)`;
+            }
+        }
+
+        function changeZoom(amount) {
+            let newZoom = currentZoom + amount;
+            // Limitlər (0.5x - 3x arası)
+            if (newZoom < 0.8) newZoom = 0.8;
+            if (newZoom > 3) newZoom = 3;
+            
+            currentZoom = newZoom;
+            updateTransform();
+        }
+
+        // --- Drag & Drop (Yalnız Zoom > 1 olduqda işləyir) ---
+        zoomWrapper.addEventListener('mousedown', (e) => {
+            if (currentZoom > 1) {
+                isDragging = true;
+                startX = e.clientX - panX * currentZoom; // Mövcud pan-ı nəzərə al
+                startY = e.clientY - panY * currentZoom;
+                zoomWrapper.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging && currentZoom > 1) {
+                e.preventDefault();
+                // Yeni koordinatları hesabla (Zoom faktoruna bölürük ki, hərəkət sürəti düzgün olsun)
+                const x = (e.clientX - startX) / currentZoom;
+                const y = (e.clientY - startY) / currentZoom;
+                
+                panX = x;
+                panY = y;
+                
+                transformLayer.style.transform = `scale(${currentZoom}) translate(${panX}px, ${panY}px)`;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            if(currentZoom > 1) zoomWrapper.style.cursor = 'grab';
+        });
+
+        // Mobil Drag Dəstəyi (Touch Events)
+        zoomWrapper.addEventListener('touchstart', (e) => {
+            if (currentZoom > 1) {
+                isDragging = true;
+                const touch = e.touches[0];
+                startX = touch.clientX - panX * currentZoom;
+                startY = touch.clientY - panY * currentZoom;
+            }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging && currentZoom > 1) {
+                // e.preventDefault(); // Brauzerin scrollunu bloklaya bilər, ehtiyatlı olun
+                const touch = e.touches[0];
+                const x = (touch.clientX - startX) / currentZoom;
+                const y = (touch.clientY - startY) / currentZoom;
+                panX = x;
+                panY = y;
+                transformLayer.style.transform = `scale(${currentZoom}) translate(${panX}px, ${panY}px)`;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+
+        // --- 4. TAM EKRAN ---
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error: ${err.message}`);
+                });
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
@@ -252,6 +410,7 @@
         }
 
         loadBook();
+
     </script>
 </body>
 </html>
