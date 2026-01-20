@@ -1,257 +1,430 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prime Trade Group - Digital Brochure</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Trade Group - Interactive Flipbook</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
+        .flipbook-container {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            perspective: 2000px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
 
-<style>
-body {
-margin: 0;
-padding: 0;
-background-color: #1a1a1a; /* Tünd boz arxa fon */
-font-family: Arial, sans-serif;
-height: 100vh;
-display: flex;
-flex-direction: column;
-overflow: hidden;
-}
+        .book-wrapper {
+            position: relative;
+            width: 100%;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
 
-/* Yüklənmə Yazısı */
-#loader {
-position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-color: white;
-font-size: 24px;
-z-index: 10;
-}
+        .book {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 70.7%; /* A4 aspect ratio for double page */
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
 
-/* Kitabın əsas konteyneri */
-.book-container {
-flex-grow: 1;
-display: flex;
-justify-content: center;
-align-items: center;
-width: 100%;
-height: 100%;
-overflow: hidden;
-transition: transform 0.3s ease; /* Zoom effekti üçün */
-}
+        .page-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-/* Kitabın özü */
-.flip-book {
-display: none; /* Yüklənənə qədər gizli */
-box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-}
+        .page {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            background: white;
+            transform-style: preserve-3d;
+            transform-origin: left center;
+            transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
 
-.page {
-padding: 0;
-background-color: white;
-overflow: hidden;
-}
+        .page.left-page {
+            left: 0;
+            transform-origin: right center;
+        }
 
-/* Toolbar (Aşağıdakı panel) */
-.toolbar {
-height: 60px;
-background-color: rgba(0, 0, 0, 0.85);
-display: flex;
-justify-content: center;
-align-items: center;
-gap: 20px;
-position: fixed;
-bottom: 0;
-width: 100%;
-z-index: 100;
-backdrop-filter: blur(5px);
-border-top: 1px solid #333;
-}
+        .page.right-page {
+            right: 0;
+            transform-origin: left center;
+        }
 
-.btn-icon {
-background: none;
-border: none;
-color: #ccc;
-font-size: 18px;
-cursor: pointer;
-padding: 10px;
-border-radius: 50%;
-transition: 0.2s;
-display: flex;
-align-items: center;
-justify-content: center;
-width: 40px;
-height: 40px;
-}
+        .page-content {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
 
-.btn-icon:hover {
-color: white;
-background-color: rgba(255, 255, 255, 0.1);
-}
+        .page-content canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
 
-.page-info {
-color: white;
-font-size: 14px;
-min-width: 60px;
-text-align: center;
-}
+        .page-front {
+            transform: rotateY(0deg);
+        }
 
-/* Canvas-ın düzgün oturması üçün */
-canvas {
-width: 100% !important;
-height: 100% !important;
-}
-</style>
+        .page-back {
+            transform: rotateY(180deg);
+        }
+
+        .page.flipped {
+            transform: rotateY(-180deg);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 40px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-indicator {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .book {
+                padding-bottom: 141.4%; /* Single page view on mobile */
+            }
+
+            .page {
+                width: 100%;
+            }
+
+            .controls {
+                padding: 15px 20px;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            button {
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+
+            .page-indicator {
+                font-size: 16px;
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                padding: 10px 15px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 13px;
+            }
+
+            .page-indicator {
+                font-size: 14px;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="flipbook-container">
+        <div class="book-wrapper">
+            <div class="book" id="book">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    Yüklənir...
+                </div>
+                <div class="page-container" id="pageContainer"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="prevBtn" onclick="prevPage()">◄ Əvvəlki</button>
+            <div class="page-indicator" id="pageIndicator">1 / 1</div>
+            <button id="nextBtn" onclick="nextPage()">Növbəti ►</button>
+        </div>
+    </div>
 
-<div id="loader">
-<i class="fas fa-spinner fa-spin"></i> Kataloq Yüklənir...
-</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // PDF.js worker configuration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-<div class="book-container" id="bookZoomWrapper">
-<div id="book" class="flip-book"></div>
-</div>
+        let pdfDoc = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        let pageRendering = false;
+        let pageNumPending = null;
+        const scale = 2.0;
+        const pdfPath = 'primetradegroup.pdf';
 
-<div class="toolbar">
-<button class="btn-icon" onclick="zoomBook(0.9)" title="Kiçilt">
-<i class="fas fa-search-minus"></i>
-</button>
+        // Load PDF
+        pdfjsLib.getDocument(pdfPath).promise.then(function(pdf) {
+            pdfDoc = pdf;
+            totalPages = pdf.numPages;
+            document.getElementById('loading').style.display = 'none';
+            renderDoublePage(currentPage);
+            updateControls();
+        }).catch(function(error) {
+            document.getElementById('loading').innerHTML = 'PDF yüklənə bilmədi. Zəhmət olmasa primetradegroup.pdf faylının mövcud olduğundan əmin olun.';
+            console.error('Error loading PDF:', error);
+        });
 
-<button class="btn-icon" id="prevBtn" title="Əvvəlki">
-<i class="fas fa-chevron-left"></i>
-</button>
+        function renderDoublePage(pageNum) {
+            if (pageRendering) {
+                pageNumPending = pageNum;
+                return;
+            }
 
-<div class="page-info">
-<span id="currentPage">1</span> / <span id="totalPages">--</span>
-</div>
+            pageRendering = true;
+            const container = document.getElementById('pageContainer');
+            container.innerHTML = '';
 
-<button class="btn-icon" id="nextBtn" title="Növbəti">
-<i class="fas fa-chevron-right"></i>
-</button>
+            const isMobile = window.innerWidth <= 768;
+            const pagesToRender = isMobile ? [pageNum] : [pageNum, pageNum + 1];
 
-<button class="btn-icon" onclick="zoomBook(1.1)" title="Böyüt">
-<i class="fas fa-search-plus"></i>
-</button>
+            Promise.all(pagesToRender.map(num => {
+                if (num > totalPages) return null;
+                return renderPage(num);
+            })).then(canvases => {
+                canvases.forEach((canvas, index) => {
+                    if (!canvas) return;
+                    
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = `page ${index === 0 ? 'left-page' : 'right-page'}`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'page-content page-front';
+                    contentDiv.appendChild(canvas);
+                    
+                    pageDiv.appendChild(contentDiv);
+                    container.appendChild(pageDiv);
+                });
 
-<a href="kataloq.pdf" download class="btn-icon" title="Yüklə">
-<i class="fas fa-download"></i>
-</a>
+                pageRendering = false;
+                if (pageNumPending !== null) {
+                    renderDoublePage(pageNumPending);
+                    pageNumPending = null;
+                }
+            });
+        }
 
-<button class="btn-icon" onclick="toggleFullScreen()" title="Tam Ekran">
-<i class="fas fa-expand"></i>
-</button>
-</div>
+        function renderPage(num) {
+            return pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale: scale });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
 
-<script>
-// --- AYARLAR ---
-const pdfPath = 'primetradegroup.pdf'; // FAYL ADINI DƏQİQ YAZ
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
 
-const pdfjsLib = window['pdfjs-dist/build/pdf'];
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                return page.render(renderContext).promise.then(() => canvas);
+            });
+        }
 
-let pageFlip;
-let currentZoom = 1;
+        function nextPage() {
+            const isMobile = window.innerWidth <= 768;
+            const increment = isMobile ? 1 : 2;
+            
+            if (currentPage + increment <= totalPages) {
+                currentPage += increment;
+                renderDoublePage(currentPage);
+                updateControls();
+                animatePageFlip('next');
+            }
+        }
 
-async function loadBook() {
-try {
-const loadingTask = pdfjsLib.getDocument(pdfPath);
-const pdf = await loadingTask.promise;
+        function prevPage() {
+            const isMobile = window.innerWidth <= 768;
+            const decrement = isMobile ? 1 : 2;
+            
+            if (currentPage - decrement >= 1) {
+                currentPage -= decrement;
+                renderDoublePage(currentPage);
+                updateControls();
+                animatePageFlip('prev');
+            }
+        }
 
-document.getElementById('totalPages').innerText = pdf.numPages;
+        function updateControls() {
+            const isMobile = window.innerWidth <= 768;
+            const increment = isMobile ? 1 : 2;
+            
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage + increment > totalPages;
+            
+            if (isMobile) {
+                document.getElementById('pageIndicator').textContent = `${currentPage} / ${totalPages}`;
+            } else {
+                const endPage = Math.min(currentPage + 1, totalPages);
+                document.getElementById('pageIndicator').textContent = `${currentPage}-${endPage} / ${totalPages}`;
+            }
+        }
 
-const bookContainer = document.getElementById('book');
+        function animatePageFlip(direction) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach((page, index) => {
+                if (direction === 'next') {
+                    page.style.animation = 'none';
+                    setTimeout(() => {
+                        page.style.animation = 'flipNext 0.8s cubic-bezier(0.645, 0.045, 0.355, 1)';
+                    }, 10);
+                } else {
+                    page.style.animation = 'none';
+                    setTimeout(() => {
+                        page.style.animation = 'flipPrev 0.8s cubic-bezier(0.645, 0.045, 0.355, 1)';
+                    }, 10);
+                }
+            });
+        }
 
-for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-const page = await pdf.getPage(pageNum);
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                prevPage();
+            } else if (e.key === 'ArrowRight') {
+                nextPage();
+            }
+        });
 
-const pageDiv = document.createElement('div');
-pageDiv.className = 'page'; // Bura 'hard' class-ı əlavə etsək səhifə bərk olar
+        // Responsive handling
+        window.addEventListener('resize', function() {
+            if (pdfDoc) {
+                renderDoublePage(currentPage);
+                updateControls();
+            }
+        });
 
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-pageDiv.appendChild(canvas);
-bookContainer.appendChild(pageDiv);
+        // Touch swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
 
-// Keyfiyyətli görüntü üçün viewport (Scale 2 = Retina keyfiyyəti)
-const viewport = page.getViewport({ scale: 2 });
-canvas.height = viewport.height;
-canvas.width = viewport.width;
+        document.getElementById('book').addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
 
-await page.render({
-canvasContext: context,
-viewport: viewport
-}).promise;
-}
+        document.getElementById('book').addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
 
-// --- FLIPBOOK YARADILMASI ---
-// Sənin istədiyin o "İlk səhifə problemi" burda həll olunur: showCover: true
-pageFlip = new St.PageFlip(document.getElementById('book'), {
-width: 450, // Bir səhifənin eni (Açılanda 900 olacaq)
-height: 636, // Hündürlük (A4 nisbəti təxminən)
-
-size: 'stretch',
-
-// BU ƏN VACİB HİSSƏDİR:
-showCover: true, // Birinci səhifəni üz qabığı kimi göstərir (tək səhifə)
-
-minWidth: 300,
-maxWidth: 1000,
-minHeight: 400,
-maxHeight: 1200,
-maxShadowOpacity: 0.5,
-autoSize: true, // Avtomatik mərkəzləmə üçün
-mobileScrollSupport: true
-});
-
-pageFlip.loadFromHTML(document.querySelectorAll('.page'));
-
-// Səhifə çevriləndə nömrəni dəyiş
-pageFlip.on('flip', (e) => {
-document.getElementById('currentPage').innerText = e.data + 1;
-});
-
-// Düymələri aktivləşdir
-document.getElementById('prevBtn').onclick = () => pageFlip.flipPrev();
-document.getElementById('nextBtn').onclick = () => pageFlip.flipNext();
-
-// Yüklənmə bitdi
-document.getElementById('loader').style.display = 'none';
-document.getElementById('book').style.display = 'block';
-
-} catch (error) {
-console.error(error);
-document.getElementById('loader').innerHTML = "Xəta: PDF tapılmadı. Fayl adını yoxlayın.";
-}
-}
-
-// --- ZOOM FUNKSİYASI ---
-function zoomBook(factor) {
-const wrapper = document.getElementById('bookZoomWrapper');
-if (factor > 1 && currentZoom < 2) currentZoom += 0.2;
-if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
-
-// CSS Transform ilə zoom edirik (ən təmiz yol)
-wrapper.style.transform = `scale(${currentZoom})`;
-}
-
-// --- TAM EKRAN (FULLSCREEN) ---
-function toggleFullScreen() {
-if (!document.fullscreenElement) {
-document.documentElement.requestFullscreen();
-} else {
-if (document.exitFullscreen) {
-document.exitFullscreen();
-}
-}
-}
-
-loadBook();
-</script>
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextPage();
+            }
+            if (touchEndX > touchStartX + 50) {
+                prevPage();
+            }
+        }
+    </script>
 </body>
 </html>
