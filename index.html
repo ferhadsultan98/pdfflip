@@ -17,71 +17,28 @@
             box-sizing: border-box;
         }
 
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        :root {
-            --bg-main: #050816;
-            --gradient-1: #141e30;
-            --gradient-2: #243b55;
-            --accent: #00e0ff;
-            --accent-soft: rgba(0, 224, 255, 0.2);
-            --toolbar-bg: rgba(5, 8, 22, 0.84);
-            --toolbar-border: rgba(255, 255, 255, 0.14);
-            --btn-bg: rgba(255, 255, 255, 0.06);
-            --btn-border: rgba(255, 255, 255, 0.18);
-            --btn-hover-bg: rgba(0, 224, 255, 0.18);
-            --shadow-strong: 0 24px 70px rgba(0, 0, 0, 0.75);
-        }
-
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle at top, #1f2933 0%, #050816 45%, #020207 100%);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
             position: relative;
-            color: #e5e7eb;
         }
 
-        /* Bokeh / gradient blobs */
-        body::before,
-        body::after {
+        /* Blur effekti üçün overlay */
+        body::before {
             content: '';
             position: fixed;
-            border-radius: 999px;
-            filter: blur(55px);
-            opacity: 0.65;
-            pointer-events: none;
-            z-index: -2;
-        }
-
-        body::before {
-            width: 420px;
-            height: 420px;
-            background: radial-gradient(circle, rgba(0, 224, 255, 0.65), transparent 65%);
-            top: -80px;
-            right: -60px;
-        }
-
-        body::after {
-            width: 520px;
-            height: 520px;
-            background: radial-gradient(circle, rgba(129, 140, 248, 0.7), transparent 70%);
-            bottom: -120px;
-            left: -80px;
-        }
-
-        /* Üstdə yüngül glass overlay */
-        .page-overlay {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 60%);
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            filter: blur(20px);
             z-index: -1;
         }
 
@@ -91,52 +48,100 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #f9fafb;
-            font-size: clamp(18px, 4vw, 22px);
+            color: white;
+            font-size: clamp(18px, 4vw, 24px);
             z-index: 10;
             text-align: center;
-            letter-spacing: 0.03em;
-            text-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
         }
 
-        #loader i {
-            font-size: clamp(26px, 5vw, 32px);
-            margin-bottom: 10px;
-            color: var(--accent);
-        }
-
-        /* Kitabın əsas konteyneri - TAM EKRAN */
+        /* Kitabın əsas konteyneri */
         .book-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 100%;
+            height: calc(100vh - 70px);
             overflow: hidden;
+            transition: transform 0.3s ease;
             cursor: grab;
-            z-index: 1;
         }
 
-        .book-container.dragging {
+        .book-container:active {
             cursor: grabbing;
         }
 
         /* Kitabın özü */
         .flip-book {
             display: none;
-            border-radius: 0;
-            overflow: visible;
-            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.75);
-            background: transparent;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .page {
             padding: 0;
-            background-color: #f9fafb;
+            background-color: white;
             overflow: hidden;
+        }
+
+        /* Toolbar (Aşağıdakı panel) */
+        .toolbar {
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(10px, 3vw, 20px);
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.4s ease;
+        }
+
+        .toolbar.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ccc;
+            font-size: clamp(14px, 3vw, 18px);
+            cursor: pointer;
+            padding: clamp(8px, 2vw, 10px);
+            border-radius: 50%;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: clamp(35px, 8vw, 40px);
+            height: clamp(35px, 8vw, 40px);
+        }
+
+        .btn-icon:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        .btn-icon:active {
+            transform: scale(0.95);
+        }
+
+        .page-info {
+            color: white;
+            font-size: clamp(12px, 2.5vw, 14px);
+            min-width: clamp(50px, 12vw, 60px);
+            text-align: center;
+            font-weight: 500;
         }
 
         /* Canvas-ın düzgün oturması üçün */
@@ -146,151 +151,33 @@
             display: block;
         }
 
-        /* Toolbar (Aşağıda panel) */
-        .toolbar {
-            height: 64px;
-            background: linear-gradient(
-                135deg,
-                rgba(15, 23, 42, 0.94),
-                rgba(15, 23, 42, 0.85)
-            );
-            box-shadow:
-                0 -12px 35px rgba(0, 0, 0, 0.7),
-                0 0 0 1px rgba(148, 163, 184, 0.28);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: clamp(12px, 3vw, 22px);
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translate(-50%, 100%);
-            width: min(100%, 720px);
-            z-index: 100;
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-radius: 18px 18px 0 0;
-            border-top: 1px solid rgba(248, 250, 252, 0.18);
-            opacity: 0;
-            transition: opacity 0.35s ease, transform 0.35s ease;
-        }
-
-        .toolbar.visible {
-            opacity: 1;
-            transform: translate(-50%, 0);
-        }
-
-        .toolbar::before {
-            content: '';
-            position: absolute;
-            top: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            border-radius: 999px;
-            background: linear-gradient(
-                to right,
-                rgba(148, 163, 184, 0.85),
-                rgba(251, 251, 251, 0.9)
-            );
-            opacity: 0.9;
-        }
-
-        .btn-icon {
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
-            color: #e5e7eb;
-            font-size: clamp(14px, 3vw, 17px);
-            cursor: pointer;
-            padding: clamp(8px, 2vw, 10px);
-            border-radius: 999px;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: clamp(36px, 8vw, 40px);
-            height: clamp(36px, 8vw, 40px);
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.7);
-        }
-
-        .btn-icon:hover {
-            color: #f9fafb;
-            background-color: var(--btn-hover-bg);
-            border-color: rgba(56, 189, 248, 0.8);
-            box-shadow:
-                0 10px 28px rgba(15, 23, 42, 0.92),
-                0 0 0 1px rgba(56, 189, 248, 0.45);
-            transform: translateY(-1px) scale(1.08);
-        }
-
-        .btn-icon:active {
-            transform: translateY(0) scale(0.97);
-            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.8);
-        }
-
-        .btn-icon.primary {
-            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), rgba(37, 99, 235, 0.35));
-            border-color: rgba(129, 140, 248, 0.75);
-        }
-
-        .page-info {
-            color: #e5e7eb;
-            font-size: clamp(12px, 2.6vw, 15px);
-            min-width: clamp(60px, 12vw, 70px);
-            text-align: center;
-            font-weight: 500;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            opacity: 0.9;
-        }
-
-        .page-info span {
-            color: #f9fafb;
-        }
-
         /* Responsive dizayn */
         @media (max-width: 768px) {
             .toolbar {
-                height: 58px;
-                width: min(100%, 96%);
-                gap: 10px;
-                border-radius: 16px 16px 0 0;
+                height: 50px;
+                gap: 8px;
             }
 
-            .toolbar::before {
-                width: 46px;
-                height: 3px;
+            .book-container {
+                height: calc(100vh - 60px);
             }
         }
 
         @media (max-width: 480px) {
             .toolbar {
-                gap: 8px;
-            }
-
-            .page-info {
-                min-width: 54px;
-                font-size: 11px;
-            }
-
-            .btn-icon {
-                width: 34px;
-                height: 34px;
+                gap: 5px;
             }
         }
 
         /* Touch cihazlar üçün üzərinə toxunma göstəricisi */
         @media (hover: none) {
             .btn-icon:active {
-                background-color: rgba(56, 189, 248, 0.28);
+                background-color: rgba(255, 255, 255, 0.3);
             }
         }
     </style>
 </head>
 <body>
-
-    <div class="page-overlay"></div>
 
     <div id="loader">
         <i class="fas fa-spinner fa-spin"></i><br>Kataloq Yüklənir...
@@ -321,7 +208,7 @@
             <i class="fas fa-search-plus"></i>
         </button>
 
-        <a href="primetradegroup.pdf" download class="btn-icon primary" title="Yüklə">
+        <a href="primetradegroup.pdf" download class="btn-icon" title="Yüklə">
             <i class="fas fa-download"></i>
         </a>
 
@@ -387,8 +274,8 @@
                     pageDiv.appendChild(canvas);
                     bookContainer.appendChild(pageDiv);
 
-                    // Yüksək keyfiyyət üçün scale artırılıb
-                    const baseScale = window.innerWidth < 768 ? 2.5 : 3.5;
+                    // Yüksək keyfiyyət üçün daha böyük scale
+                    const baseScale = window.innerWidth < 768 ? 2.5 : 3;
                     const viewport = page.getViewport({ scale: baseScale });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
@@ -399,24 +286,24 @@
                     }).promise;
                 }
 
-                // --- FLIPBOOK YARADILMASI - MAKSİMUM ÖLÇÜDƏ ---
+                // --- FLIPBOOK YARADILMASI - TAM EKRAN ÖLÇÜDƏ ---
+                const toolbarHeight = window.innerWidth < 768 ? 60 : 70;
+                const availableHeight = window.innerHeight - toolbarHeight;
                 const availableWidth = window.innerWidth;
-                const availableHeight = window.innerHeight;
                 
-                // Kitab maksimum ölçüdə olsun
                 let bookWidth, bookHeight;
                 
                 if (window.innerWidth < 768) {
-                    // Mobil - şaquli
+                    // Mobil - bir səhifə
                     bookWidth = availableWidth * 0.95;
-                    bookHeight = availableHeight * 0.92;
-                } else {
-                    // Desktop - üfüqi (landscape)
-                    // İki səhifə yan-yana göstərmək üçün
                     bookHeight = availableHeight * 0.95;
-                    bookWidth = (bookHeight * 0.707) * 2; // A4 aspect ratio * 2 səhifə
+                } else {
+                    // Desktop - iki səhifə yan-yana
+                    // Hündürlük əsasında hesabla
+                    bookHeight = availableHeight * 0.95;
+                    bookWidth = (bookHeight / 1.414) * 2; // A4 ratio
                     
-                    // Əgər çox geniş olarsa, eni limitlə
+                    // Əgər çox geniş olarsa, en əsasında hesabla
                     if (bookWidth > availableWidth * 0.95) {
                         bookWidth = availableWidth * 0.95;
                         bookHeight = (bookWidth / 2) * 1.414;
@@ -424,14 +311,14 @@
                 }
 
                 pageFlip = new St.PageFlip(document.getElementById('book'), {
-                    width: Math.floor(bookWidth / 2), // Hər səhifənin eni
+                    width: Math.floor(bookWidth / 2),
                     height: Math.floor(bookHeight),
                     size: 'stretch',
                     showCover: true,
                     minWidth: 200,
-                    maxWidth: 3000,
+                    maxWidth: 2000,
                     minHeight: 300,
-                    maxHeight: 3000,
+                    maxHeight: 2000,
                     maxShadowOpacity: 0.5,
                     autoSize: false,
                     mobileScrollSupport: true,
@@ -476,12 +363,7 @@
             if (factor > 1 && currentZoom < 2) currentZoom += 0.2;
             if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
             
-            const flipBookElement = document.querySelector('.flip-book');
-            if (flipBookElement) {
-                flipBookElement.style.transform = `scale(${currentZoom})`;
-                flipBookElement.style.transformOrigin = 'center center';
-                flipBookElement.style.transition = 'transform 0.3s ease';
-            }
+            bookWrapper.style.transform = `scale(${currentZoom})`;
             showToolbar();
         }
 
@@ -493,54 +375,44 @@
 
             bookWrapper.addEventListener('mousedown', (e) => {
                 isDragging = true;
-                bookWrapper.classList.add('dragging');
-                startX = e.pageX - bookWrapper.offsetLeft;
-                startY = e.pageY - bookWrapper.offsetTop;
-                scrollLeft = bookWrapper.scrollLeft;
-                scrollTop = bookWrapper.scrollTop;
+                startX = e.pageX;
+                startY = e.pageY;
+                scrollLeft = window.scrollX;
+                scrollTop = window.scrollY;
             });
 
             bookWrapper.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
                 e.preventDefault();
                 
-                const x = e.pageX - bookWrapper.offsetLeft;
-                const y = e.pageY - bookWrapper.offsetTop;
+                const x = e.pageX - startX;
+                const y = e.pageY - startY;
                 
-                const walkX = (x - startX);
-                const walkY = (y - startY);
-                
-                bookWrapper.scrollLeft = scrollLeft - walkX;
-                bookWrapper.scrollTop = scrollTop - walkY;
+                window.scrollTo(scrollLeft - x, scrollTop - y);
             });
 
-            ['mouseup', 'mouseleave'].forEach(evt => {
-                bookWrapper.addEventListener(evt, () => {
-                    isDragging = false;
-                    bookWrapper.classList.remove('dragging');
-                });
+            bookWrapper.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            bookWrapper.addEventListener('mouseleave', () => {
+                isDragging = false;
             });
 
             // Touch events üçün
             let touchStartX, touchStartY;
-            let touchScrollLeft, touchScrollTop;
             
             bookWrapper.addEventListener('touchstart', (e) => {
-                const touch = e.touches[0];
-                touchStartX = touch.pageX;
-                touchStartY = touch.pageY;
-                touchScrollLeft = bookWrapper.scrollLeft;
-                touchScrollTop = bookWrapper.scrollTop;
-            }, { passive: true });
+                touchStartX = e.touches[0].pageX;
+                touchStartY = e.touches[0].pageY;
+            });
 
             bookWrapper.addEventListener('touchmove', (e) => {
-                const touch = e.touches[0];
-                const diffX = touch.pageX - touchStartX;
-                const diffY = touch.pageY - touchStartY;
+                const touchX = e.touches[0].pageX - touchStartX;
+                const touchY = e.touches[0].pageY - touchStartY;
                 
-                bookWrapper.scrollLeft = touchScrollLeft - diffX;
-                bookWrapper.scrollTop = touchScrollTop - diffY;
-            }, { passive: true });
+                window.scrollBy(-touchX * 0.5, -touchY * 0.5);
+            });
         }
 
         // --- TAM EKRAN (FULLSCREEN) ---
@@ -557,7 +429,6 @@
 
         // Klaviatura ilə idarəetmə
         document.addEventListener('keydown', (e) => {
-            if (!pageFlip) return;
             if (e.key === 'ArrowLeft') {
                 pageFlip.flipPrev();
                 showToolbar();
@@ -567,23 +438,24 @@
             }
         });
 
-        // Resize zamanı yenidən hesabla və kitabı yenidən yarat
+        // Resize zamanı yenidən hesabla
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
                 if (pageFlip) {
+                    const toolbarHeight = window.innerWidth < 768 ? 60 : 70;
+                    const availableHeight = window.innerHeight - toolbarHeight;
                     const availableWidth = window.innerWidth;
-                    const availableHeight = window.innerHeight;
                     
                     let bookWidth, bookHeight;
                     
                     if (window.innerWidth < 768) {
                         bookWidth = availableWidth * 0.95;
-                        bookHeight = availableHeight * 0.92;
+                        bookHeight = availableHeight * 0.95;
                     } else {
                         bookHeight = availableHeight * 0.95;
-                        bookWidth = (bookHeight * 0.707) * 2;
+                        bookWidth = (bookHeight / 1.414) * 2;
                         
                         if (bookWidth > availableWidth * 0.95) {
                             bookWidth = availableWidth * 0.95;
@@ -596,7 +468,7 @@
                         height: Math.floor(bookHeight)
                     });
                 }
-            }, 250);
+            }, 300);
         });
 
         loadBook();
