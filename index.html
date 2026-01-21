@@ -20,8 +20,8 @@
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Süət rəng gradient */
-            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -29,7 +29,6 @@
             position: relative;
         }
 
-        /* Blur effekti üçün overlay */
         body::before {
             content: '';
             position: fixed;
@@ -37,12 +36,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: inherit;
-            filter: blur(20px);
+            background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.3), transparent 50%);
+            filter: blur(60px);
             z-index: -1;
         }
 
-        /* Yüklənmə Yazısı */
         #loader {
             position: absolute;
             top: 50%;
@@ -52,9 +51,10 @@
             font-size: clamp(18px, 4vw, 24px);
             z-index: 10;
             text-align: center;
+            font-weight: 300;
+            letter-spacing: 1px;
         }
 
-        /* Kitabın əsas konteyneri */
         .book-container {
             flex-grow: 1;
             display: flex;
@@ -62,20 +62,21 @@
             align-items: center;
             width: 100%;
             height: calc(100vh - 70px);
-            overflow: hidden;
-            transition: transform 0.3s ease;
+            overflow: auto;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: grab;
+            padding: 20px;
         }
 
         .book-container:active {
             cursor: grabbing;
         }
 
-        /* Kitabın özü */
         .flip-book {
             display: none;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6), 
+                        0 0 40px rgba(138, 43, 226, 0.3);
+            border-radius: 12px;
             overflow: hidden;
         }
 
@@ -85,23 +86,23 @@
             overflow: hidden;
         }
 
-        /* Toolbar (Aşağıdakı panel) */
         .toolbar {
-            height: 60px;
-            background-color: rgba(0, 0, 0, 0.85);
+            height: 70px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: clamp(10px, 3vw, 20px);
+            gap: clamp(12px, 3vw, 24px);
             position: fixed;
             bottom: 0;
             width: 100%;
             z-index: 100;
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.5);
             opacity: 0;
             transform: translateY(100%);
-            transition: all 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .toolbar.visible {
@@ -110,69 +111,125 @@
         }
 
         .btn-icon {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #ccc;
-            font-size: clamp(14px, 3vw, 18px);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+            font-size: clamp(15px, 3vw, 19px);
             cursor: pointer;
-            padding: clamp(8px, 2vw, 10px);
-            border-radius: 50%;
-            transition: all 0.3s;
+            padding: clamp(10px, 2vw, 12px);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            width: clamp(35px, 8vw, 40px);
-            height: clamp(35px, 8vw, 40px);
+            width: clamp(42px, 9vw, 48px);
+            height: clamp(42px, 9vw, 48px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-icon:hover::before {
+            width: 100%;
+            height: 100%;
         }
 
         .btn-icon:hover {
             color: white;
-            background-color: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: scale(1.1);
+            background: linear-gradient(145deg, rgba(138, 43, 226, 0.5), rgba(120, 119, 198, 0.5));
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(138, 43, 226, 0.4);
         }
 
         .btn-icon:active {
-            transform: scale(0.95);
+            transform: translateY(0) scale(0.95);
+        }
+
+        .btn-icon i {
+            position: relative;
+            z-index: 1;
         }
 
         .page-info {
             color: white;
-            font-size: clamp(12px, 2.5vw, 14px);
-            min-width: clamp(50px, 12vw, 60px);
+            font-size: clamp(13px, 2.5vw, 15px);
+            min-width: clamp(60px, 12vw, 70px);
             text-align: center;
             font-weight: 500;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Canvas-ın düzgün oturması üçün */
         canvas {
             width: 100% !important;
             height: 100% !important;
             display: block;
         }
 
-        /* Responsive dizayn */
+        /* Scroll bar dizaynı */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(138, 43, 226, 0.6);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(138, 43, 226, 0.8);
+        }
+
         @media (max-width: 768px) {
             .toolbar {
-                height: 50px;
-                gap: 8px;
+                height: 60px;
+                gap: 10px;
             }
 
             .book-container {
                 height: calc(100vh - 60px);
+                padding: 10px;
+            }
+
+            .btn-icon {
+                border-radius: 10px;
             }
         }
 
         @media (max-width: 480px) {
             .toolbar {
-                gap: 5px;
+                gap: 6px;
+            }
+
+            .page-info {
+                padding: 6px 12px;
             }
         }
 
-        /* Touch cihazlar üçün üzərinə toxunma göstəricisi */
         @media (hover: none) {
             .btn-icon:active {
-                background-color: rgba(255, 255, 255, 0.3);
+                background: linear-gradient(145deg, rgba(138, 43, 226, 0.6), rgba(120, 119, 198, 0.6));
             }
         }
     </style>
@@ -218,7 +275,6 @@
     </div>
 
     <script>
-        // --- AYARLAR ---
         const pdfPath = 'primetradegroup.pdf';
         
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -228,7 +284,6 @@
         let currentZoom = 1;
         let hideToolbarTimeout;
 
-        // --- TOOLBAR GÖSTƏRMƏ VƏ GİZLƏTMƏ ---
         const toolbar = document.getElementById('toolbar');
         const bookWrapper = document.getElementById('bookZoomWrapper');
 
@@ -236,13 +291,11 @@
             toolbar.classList.add('visible');
             clearTimeout(hideToolbarTimeout);
             
-            // 5 saniyə sonra gizlət
             hideToolbarTimeout = setTimeout(() => {
                 toolbar.classList.remove('visible');
             }, 5000);
         }
 
-        // Mouse hərəkəti və ya toxunma zamanı toolbar göstər
         bookWrapper.addEventListener('mousemove', showToolbar);
         bookWrapper.addEventListener('touchstart', showToolbar);
         toolbar.addEventListener('mouseenter', () => {
@@ -250,10 +303,8 @@
         });
         toolbar.addEventListener('mouseleave', showToolbar);
 
-        // Səhifə yüklənəndə bir dəfə göstər
         window.addEventListener('load', showToolbar);
 
-        // --- PDF YÜKLƏNMƏSI ---
         async function loadBook() {
             try {
                 const loadingTask = pdfjsLib.getDocument(pdfPath);
@@ -274,7 +325,6 @@
                     pageDiv.appendChild(canvas);
                     bookContainer.appendChild(pageDiv);
 
-                    // Responsive scale hesablama
                     const baseScale = window.innerWidth < 768 ? 1.5 : 2;
                     const viewport = page.getViewport({ scale: baseScale });
                     canvas.height = viewport.height;
@@ -286,7 +336,6 @@
                     }).promise;
                 }
 
-                // --- FLIPBOOK YARADILMASI ---
                 const bookWidth = window.innerWidth < 768 ? 
                     Math.min(window.innerWidth * 0.9, 300) : 
                     Math.min(window.innerWidth * 0.4, 450);
@@ -307,20 +356,18 @@
                     maxShadowOpacity: 0.5,
                     autoSize: true,
                     mobileScrollSupport: true,
-                    swipeDistance: 50, // Swipe məsafəsi
-                    clickEventForward: false, // Klik ilə keçid deaktiv
-                    useMouseEvents: false // Mouse klik keçidini söndür
+                    swipeDistance: 50,
+                    clickEventForward: false,
+                    useMouseEvents: false
                 });
 
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
-                // Səhifə çevriləndə nömrəni dəyiş
                 pageFlip.on('flip', (e) => {
                     document.getElementById('currentPage').innerText = e.data + 1;
-                    showToolbar(); // Səhifə dəyişdikdə toolbar göstər
+                    showToolbar();
                 });
 
-                // Düymələri aktivləşdir
                 document.getElementById('prevBtn').onclick = () => {
                     pageFlip.flipPrev();
                     showToolbar();
@@ -330,11 +377,9 @@
                     showToolbar();
                 };
 
-                // Yüklənmə bitdi
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('book').style.display = 'block';
 
-                // Drag funksionallığını əlavə et
                 enableDragScroll();
 
             } catch (error) {
@@ -343,64 +388,80 @@
             }
         }
 
-        // --- ZOOM FUNKSİYASI ---
         function zoomBook(factor) {
-            if (factor > 1 && currentZoom < 2) currentZoom += 0.2;
+            if (factor > 1 && currentZoom < 2.5) currentZoom += 0.2;
             if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
             
             bookWrapper.style.transform = `scale(${currentZoom})`;
             showToolbar();
         }
 
-        // --- DRAG SCROLL FUNKSİYASI ---
         function enableDragScroll() {
             let isDragging = false;
             let startX, startY;
             let scrollLeft, scrollTop;
 
             bookWrapper.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.pageX;
-                startY = e.pageY;
-                scrollLeft = window.scrollX;
-                scrollTop = window.scrollY;
+                if (e.target.closest('.flip-book')) {
+                    isDragging = true;
+                    startX = e.pageX - bookWrapper.offsetLeft;
+                    startY = e.pageY - bookWrapper.offsetTop;
+                    scrollLeft = bookWrapper.scrollLeft;
+                    scrollTop = bookWrapper.scrollTop;
+                    bookWrapper.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
             });
 
-            bookWrapper.addEventListener('mousemove', (e) => {
+            document.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
                 e.preventDefault();
                 
-                const x = e.pageX - startX;
-                const y = e.pageY - startY;
+                const x = e.pageX - bookWrapper.offsetLeft;
+                const y = e.pageY - bookWrapper.offsetTop;
                 
-                window.scrollTo(scrollLeft - x, scrollTop - y);
+                const walkX = (x - startX) * 1.5;
+                const walkY = (y - startY) * 1.5;
+                
+                bookWrapper.scrollLeft = scrollLeft - walkX;
+                bookWrapper.scrollTop = scrollTop - walkY;
             });
 
-            bookWrapper.addEventListener('mouseup', () => {
-                isDragging = false;
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    bookWrapper.style.cursor = 'grab';
+                }
             });
 
-            bookWrapper.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-
-            // Touch events üçün
             let touchStartX, touchStartY;
+            let touchScrollLeft, touchScrollTop;
             
             bookWrapper.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].pageX;
-                touchStartY = e.touches[0].pageY;
-            });
+                if (e.target.closest('.flip-book')) {
+                    touchStartX = e.touches[0].pageX;
+                    touchStartY = e.touches[0].pageY;
+                    touchScrollLeft = bookWrapper.scrollLeft;
+                    touchScrollTop = bookWrapper.scrollTop;
+                }
+            }, { passive: true });
 
             bookWrapper.addEventListener('touchmove', (e) => {
-                const touchX = e.touches[0].pageX - touchStartX;
-                const touchY = e.touches[0].pageY - touchStartY;
-                
-                window.scrollBy(-touchX * 0.5, -touchY * 0.5);
+                if (touchStartX !== undefined) {
+                    const touchX = touchStartX - e.touches[0].pageX;
+                    const touchY = touchStartY - e.touches[0].pageY;
+                    
+                    bookWrapper.scrollLeft = touchScrollLeft + touchX;
+                    bookWrapper.scrollTop = touchScrollTop + touchY;
+                }
+            }, { passive: true });
+
+            bookWrapper.addEventListener('touchend', () => {
+                touchStartX = undefined;
+                touchStartY = undefined;
             });
         }
 
-        // --- TAM EKRAN (FULLSCREEN) ---
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
@@ -412,7 +473,6 @@
             showToolbar();
         }
 
-        // Klaviatura ilə idarəetmə
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') {
                 pageFlip.flipPrev();
@@ -423,7 +483,6 @@
             }
         });
 
-        // Resize zamanı yenidən hesabla
         window.addEventListener('resize', () => {
             if (pageFlip) {
                 pageFlip.updateState();
