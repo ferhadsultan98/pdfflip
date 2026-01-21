@@ -20,7 +20,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Süət rəng gradient */
             font-family: Arial, sans-serif;
             height: 100vh;
             display: flex;
@@ -274,8 +274,8 @@
                     pageDiv.appendChild(canvas);
                     bookContainer.appendChild(pageDiv);
 
-                    // Yüksək keyfiyyət üçün daha böyük scale
-                    const baseScale = window.innerWidth < 768 ? 2.5 : 3;
+                    // Responsive scale hesablama
+                    const baseScale = window.innerWidth < 768 ? 1.5 : 2;
                     const viewport = page.getViewport({ scale: baseScale });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
@@ -286,45 +286,30 @@
                     }).promise;
                 }
 
-                // --- FLIPBOOK YARADILMASI - TAM EKRAN ÖLÇÜDƏ ---
-                const toolbarHeight = window.innerWidth < 768 ? 60 : 70;
-                const availableHeight = window.innerHeight - toolbarHeight;
-                const availableWidth = window.innerWidth;
+                // --- FLIPBOOK YARADILMASI ---
+                const bookWidth = window.innerWidth < 768 ? 
+                    Math.min(window.innerWidth * 0.9, 300) : 
+                    Math.min(window.innerWidth * 0.4, 450);
                 
-                let bookWidth, bookHeight;
-                
-                if (window.innerWidth < 768) {
-                    // Mobil - bir səhifə
-                    bookWidth = availableWidth * 0.95;
-                    bookHeight = availableHeight * 0.95;
-                } else {
-                    // Desktop - iki səhifə yan-yana
-                    // Hündürlük əsasında hesabla
-                    bookHeight = availableHeight * 0.95;
-                    bookWidth = (bookHeight / 1.414) * 2; // A4 ratio
-                    
-                    // Əgər çox geniş olarsa, en əsasında hesabla
-                    if (bookWidth > availableWidth * 0.95) {
-                        bookWidth = availableWidth * 0.95;
-                        bookHeight = (bookWidth / 2) * 1.414;
-                    }
-                }
+                const bookHeight = window.innerWidth < 768 ? 
+                    bookWidth * 1.414 : 
+                    Math.min(window.innerHeight * 0.7, 636);
 
                 pageFlip = new St.PageFlip(document.getElementById('book'), {
-                    width: Math.floor(bookWidth / 2),
-                    height: Math.floor(bookHeight),
+                    width: bookWidth,
+                    height: bookHeight,
                     size: 'stretch',
                     showCover: true,
                     minWidth: 200,
-                    maxWidth: 2000,
+                    maxWidth: 1000,
                     minHeight: 300,
-                    maxHeight: 2000,
+                    maxHeight: 1400,
                     maxShadowOpacity: 0.5,
-                    autoSize: false,
+                    autoSize: true,
                     mobileScrollSupport: true,
-                    swipeDistance: 50,
-                    clickEventForward: false,
-                    useMouseEvents: false
+                    swipeDistance: 50, // Swipe məsafəsi
+                    clickEventForward: false, // Klik ilə keçid deaktiv
+                    useMouseEvents: false // Mouse klik keçidini söndür
                 });
 
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
@@ -332,7 +317,7 @@
                 // Səhifə çevriləndə nömrəni dəyiş
                 pageFlip.on('flip', (e) => {
                     document.getElementById('currentPage').innerText = e.data + 1;
-                    showToolbar();
+                    showToolbar(); // Səhifə dəyişdikdə toolbar göstər
                 });
 
                 // Düymələri aktivləşdir
@@ -439,36 +424,10 @@
         });
 
         // Resize zamanı yenidən hesabla
-        let resizeTimeout;
         window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                if (pageFlip) {
-                    const toolbarHeight = window.innerWidth < 768 ? 60 : 70;
-                    const availableHeight = window.innerHeight - toolbarHeight;
-                    const availableWidth = window.innerWidth;
-                    
-                    let bookWidth, bookHeight;
-                    
-                    if (window.innerWidth < 768) {
-                        bookWidth = availableWidth * 0.95;
-                        bookHeight = availableHeight * 0.95;
-                    } else {
-                        bookHeight = availableHeight * 0.95;
-                        bookWidth = (bookHeight / 1.414) * 2;
-                        
-                        if (bookWidth > availableWidth * 0.95) {
-                            bookWidth = availableWidth * 0.95;
-                            bookHeight = (bookWidth / 2) * 1.414;
-                        }
-                    }
-                    
-                    pageFlip.updateState({
-                        width: Math.floor(bookWidth / 2),
-                        height: Math.floor(bookHeight)
-                    });
-                }
-            }, 300);
+            if (pageFlip) {
+                pageFlip.updateState();
+            }
         });
 
         loadBook();
