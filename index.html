@@ -62,14 +62,9 @@
             align-items: center;
             width: 100%;
             height: calc(100vh - 70px);
-            overflow: auto;
+            overflow: hidden;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: grab;
             padding: 20px;
-        }
-
-        .book-container:active {
-            cursor: grabbing;
         }
 
         .flip-book {
@@ -78,6 +73,7 @@
                         0 0 40px rgba(138, 43, 226, 0.3);
             border-radius: 12px;
             overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .page {
@@ -94,20 +90,24 @@
             align-items: center;
             gap: clamp(16px, 4vw, 32px);
             position: fixed;
-            bottom: 0;
-            width: 100%;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            width: auto;
+            max-width: 90%;
+            padding: 0 clamp(20px, 4vw, 40px);
             z-index: 100;
             backdrop-filter: blur(20px) saturate(180%);
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             opacity: 0;
-            transform: translateY(100%);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
         }
 
         .toolbar.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
         }
 
         .btn-icon {
@@ -173,6 +173,9 @@
             .toolbar {
                 height: 56px;
                 gap: 12px;
+                bottom: 15px;
+                border-radius: 16px;
+                padding: 0 clamp(15px, 3vw, 25px);
             }
 
             .book-container {
@@ -184,6 +187,8 @@
         @media (max-width: 480px) {
             .toolbar {
                 gap: 8px;
+                padding: 0 12px;
+                border-radius: 14px;
             }
         }
 
@@ -246,6 +251,7 @@
 
         const toolbar = document.getElementById('toolbar');
         const bookWrapper = document.getElementById('bookZoomWrapper');
+        const flipBook = document.getElementById('book');
 
         function showToolbar() {
             toolbar.classList.add('visible');
@@ -340,8 +346,6 @@
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('book').style.display = 'block';
 
-                enableDragScroll();
-
             } catch (error) {
                 console.error(error);
                 document.getElementById('loader').innerHTML = "<i class='fas fa-exclamation-triangle'></i><br>Xəta: PDF tapılmadı. Fayl adını yoxlayın.";
@@ -352,74 +356,8 @@
             if (factor > 1 && currentZoom < 2.5) currentZoom += 0.2;
             if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
             
-            bookWrapper.style.transform = `scale(${currentZoom})`;
+            flipBook.style.transform = `scale(${currentZoom})`;
             showToolbar();
-        }
-
-        function enableDragScroll() {
-            let isDragging = false;
-            let startX, startY;
-            let scrollLeft, scrollTop;
-
-            bookWrapper.addEventListener('mousedown', (e) => {
-                if (e.target.closest('.flip-book')) {
-                    isDragging = true;
-                    startX = e.pageX - bookWrapper.offsetLeft;
-                    startY = e.pageY - bookWrapper.offsetTop;
-                    scrollLeft = bookWrapper.scrollLeft;
-                    scrollTop = bookWrapper.scrollTop;
-                    bookWrapper.style.cursor = 'grabbing';
-                    e.preventDefault();
-                }
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                const x = e.pageX - bookWrapper.offsetLeft;
-                const y = e.pageY - bookWrapper.offsetTop;
-                
-                const walkX = (x - startX) * 1.5;
-                const walkY = (y - startY) * 1.5;
-                
-                bookWrapper.scrollLeft = scrollLeft - walkX;
-                bookWrapper.scrollTop = scrollTop - walkY;
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    bookWrapper.style.cursor = 'grab';
-                }
-            });
-
-            let touchStartX, touchStartY;
-            let touchScrollLeft, touchScrollTop;
-            
-            bookWrapper.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.flip-book')) {
-                    touchStartX = e.touches[0].pageX;
-                    touchStartY = e.touches[0].pageY;
-                    touchScrollLeft = bookWrapper.scrollLeft;
-                    touchScrollTop = bookWrapper.scrollTop;
-                }
-            }, { passive: true });
-
-            bookWrapper.addEventListener('touchmove', (e) => {
-                if (touchStartX !== undefined) {
-                    const touchX = touchStartX - e.touches[0].pageX;
-                    const touchY = touchStartY - e.touches[0].pageY;
-                    
-                    bookWrapper.scrollLeft = touchScrollLeft + touchX;
-                    bookWrapper.scrollTop = touchScrollTop + touchY;
-                }
-            }, { passive: true });
-
-            bookWrapper.addEventListener('touchend', () => {
-                touchStartX = undefined;
-                touchStartY = undefined;
-            });
         }
 
         function toggleFullScreen() {
