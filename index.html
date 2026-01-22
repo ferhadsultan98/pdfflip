@@ -62,8 +62,14 @@
             align-items: center;
             width: 100%;
             height: calc(100vh - 70px);
-            overflow: hidden;
+            overflow: auto;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
             padding: 20px;
+        }
+
+        .book-container:active {
+            cursor: grabbing;
         }
 
         .flip-book {
@@ -72,7 +78,6 @@
                         0 0 40px rgba(138, 43, 226, 0.3);
             border-radius: 12px;
             overflow: hidden;
-            transition: transform 0.3s ease;
         }
 
         .page {
@@ -89,23 +94,20 @@
             align-items: center;
             gap: clamp(16px, 4vw, 32px);
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: auto;
-            max-width: 90%;
-            padding: 0 24px;
+            bottom: 0;
+            width: 100%;
             z-index: 100;
             backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(0, 0, 0, 0.06);
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.08);
             opacity: 0;
-            border-radius: 16px;
+            transform: translateY(100%);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .toolbar.visible {
             opacity: 1;
+            transform: translateY(0);
         }
 
         .btn-icon {
@@ -149,13 +151,28 @@
             display: block;
         }
 
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
         @media (max-width: 768px) {
             .toolbar {
                 height: 56px;
                 gap: 12px;
-                padding: 0 16px;
-                bottom: 16px;
-                border-radius: 14px;
             }
 
             .book-container {
@@ -167,7 +184,6 @@
         @media (max-width: 480px) {
             .toolbar {
                 gap: 8px;
-                padding: 0 12px;
             }
         }
 
@@ -324,6 +340,8 @@
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('book').style.display = 'block';
 
+                enableDragScroll();
+
             } catch (error) {
                 console.error(error);
                 document.getElementById('loader').innerHTML = "<i class='fas fa-exclamation-triangle'></i><br>Xəta: PDF tapılmadı. Fayl adını yoxlayın.";
@@ -331,17 +349,77 @@
         }
 
         function zoomBook(factor) {
-            const flipBookElement = document.getElementById('book');
+            if (factor > 1 && currentZoom < 2.5) currentZoom += 0.2;
+            if (factor < 1 && currentZoom > 0.5) currentZoom -= 0.2;
             
-            if (factor > 1 && currentZoom < 2.5) {
-                currentZoom += 0.2;
-            }
-            if (factor < 1 && currentZoom > 0.5) {
-                currentZoom -= 0.2;
-            }
-            
-            flipBookElement.style.transform = `scale(${currentZoom})`;
+            bookWrapper.style.transform = `scale(${currentZoom})`;
             showToolbar();
+        }
+
+        function enableDragScroll() {
+            let isDragging = false;
+            let startX, startY;
+            let scrollLeft, scrollTop;
+
+            bookWrapper.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.flip-book')) {
+                    isDragging = true;
+                    startX = e.pageX - bookWrapper.offsetLeft;
+                    startY = e.pageY - bookWrapper.offsetTop;
+                    scrollLeft = bookWrapper.scrollLeft;
+                    scrollTop = bookWrapper.scrollTop;
+                    bookWrapper.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const x = e.pageX - bookWrapper.offsetLeft;
+                const y = e.pageY - bookWrapper.offsetTop;
+                
+                const walkX = (x - startX) * 1.5;
+                const walkY = (y - startY) * 1.5;
+                
+                bookWrapper.scrollLeft = scrollLeft - walkX;
+                bookWrapper.scrollTop = scrollTop - walkY;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    bookWrapper.style.cursor = 'grab';
+                }
+            });
+
+            let touchStartX, touchStartY;
+            let touchScrollLeft, touchScrollTop;
+            
+            bookWrapper.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.flip-book')) {
+                    touchStartX = e.touches[0].pageX;
+                    touchStartY = e.touches[0].pageY;
+                    touchScrollLeft = bookWrapper.scrollLeft;
+                    touchScrollTop = bookWrapper.scrollTop;
+                }
+            }, { passive: true });
+
+            bookWrapper.addEventListener('touchmove', (e) => {
+                if (touchStartX !== undefined) {
+                    const touchX = touchStartX - e.touches[0].pageX;
+                    const touchY = touchStartY - e.touches[0].pageY;
+                    
+                    bookWrapper.scrollLeft = touchScrollLeft + touchX;
+                    bookWrapper.scrollTop = touchScrollTop + touchY;
+                }
+            }, { passive: true });
+
+            bookWrapper.addEventListener('touchend', () => {
+                touchStartX = undefined;
+                touchStartY = undefined;
+            });
         }
 
         function toggleFullScreen() {
